@@ -236,7 +236,20 @@ ALWAYS implement in a TDD approach as Kent Beck mentions.
 
 1. Write tests and confirm they fail.
 2. Wait for confirmation from the user to see if the test is good enough or not.
-3. After confirmation, write the code to pass the test. 
+3. After confirmation, write the code to pass the test.
+
+## CRITICAL TDD WORKFLOW - NEVER VIOLATE
+
+**🚫 NEVER IMPLEMENT CODE WITHOUT TESTS FIRST**
+
+When working on any task that involves code implementation:
+
+1. **MANDATORY**: Write failing tests FIRST
+2. **MANDATORY**: Present test plan and wait for user confirmation
+3. **MANDATORY**: Only after user confirms tests are adequate, implement the code to pass tests
+4. **MANDATORY**: Never skip this process, even for seemingly simple tasks
+
+This is a strict requirement. Implementation without tests-first violates the project's TDD principles and must never happen again. 
 
 ## 2. Typical Workflow
 
@@ -281,14 +294,14 @@ A task is **Done** only when **ALL** of the following are complete:
 4. **Static analysis**: linter & formatter succeed.
 5. **Documentation**:
    - All relevant docs updated (any relevant README file, backlog/docs, backlog/decisions, etc.).
-   - Task file **MUST** have an `## Implementation Notes` section added summarising:
+   - Task file **MUST** have an `## Implementation Notes` section added summarizing:
      - Approach taken
      - Features implemented or modified
      - Technical decisions and trade-offs
      - Modified or added files
 6. **Review**: self review code.
 7. **Task hygiene**: status set to **Done** via CLI (`backlog task edit <id> -s Done`).
-8. **No regressions**: performance, security and licence checks green.
+8. **No regressions**: performance, security and license checks green.
 
 ⚠️ **IMPORTANT**: Never mark a task as Done without completing ALL items above.
 
