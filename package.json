@@ -2,7 +2,7 @@
   "name": "clipcoderef",
   "displayName": "ClipCodeRef",
   "description": "Copy code references",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "icon": "assets/icon.png",
   "publisher": "Craftell",
   "repository": {
@@ -11,7 +11,7 @@
   },
   "license": "MIT",
   "engines": {
-    "vscode": "^1.101.0"
+    "vscode": "^1.70.0"
   },
   "categories": [
     "Programming Languages",
@@ -115,7 +115,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.101.0",
+    "@types/vscode": "^1.70.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@typescript-eslint/eslint-plugin": "^8.31.1",

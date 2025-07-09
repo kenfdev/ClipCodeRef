@@ -104,7 +104,7 @@ Add to your VS Code `settings.json`:
 
 ## Requirements
 
-- VS Code 1.101.0 or higher
+- VS Code 1.70.0 or higher
 - No external dependencies required
 
 ## Known Limitations
