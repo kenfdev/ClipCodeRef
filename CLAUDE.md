@@ -247,7 +247,7 @@ ALWAYS implement in a TDD approach as Kent Beck mentions.
 
 **🚫 NEVER IMPLEMENT CODE WITHOUT TESTS FIRST**
 
-When working on any task that involves code implementation:
+When working on any task that involves **application code implementation**:
 
 1. **MANDATORY**: Write failing tests FIRST
 2. **MANDATORY**: Present test plan and wait for user confirmation
@@ -256,9 +256,11 @@ When working on any task that involves code implementation:
 
 This is a strict requirement. Implementation without tests-first violates the project's TDD principles and must never happen again.
 
+**Note**: TDD applies to application code (TypeScript/JavaScript logic, features, bug fixes). Infrastructure tasks (CI/CD workflows, build configs, deployment scripts) do not require tests as they are configuration, not testable business logic.
+
 ## ⚠️ MANDATORY CHECKPOINT SYSTEM ⚠️
 
-**BEFORE IMPLEMENTING ANY CODE, CLAUDE MUST:**
+**BEFORE IMPLEMENTING ANY APPLICATION CODE, CLAUDE MUST:**
 
 1. **STOP** - Do not implement code after writing tests
 2. **ASK** - "I've written tests for [feature]. Do these tests adequately cover the requirements? Should I proceed with implementing the code to make them pass?"
@@ -268,6 +270,8 @@ This is a strict requirement. Implementation without tests-first violates the pr
 **If you find yourself about to implement code without asking for test confirmation, STOP IMMEDIATELY and ask for permission.**
 
 This checkpoint system is designed to prevent automatic implementation and ensure proper TDD workflow.
+
+**Note**: This checkpoint system applies only to application code (TypeScript/JavaScript logic, features, bug fixes). Infrastructure tasks (CI/CD workflows, build configs, deployment scripts) can be implemented directly as they are configuration, not testable business logic.
 
 ## TASK CREATION RULES
 
