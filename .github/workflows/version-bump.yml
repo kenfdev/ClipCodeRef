@@ -25,6 +25,7 @@ jobs:
       with:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
+        ref: main
     
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -66,4 +67,3 @@ jobs:
         echo "- **New Version**: v${{ steps.get_version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Git Tag**: v${{ steps.get_version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "The release workflow will now be triggered automatically." >> $GITHUB_STEP_SUMMARY

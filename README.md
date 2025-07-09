@@ -153,7 +153,10 @@ This project uses automated version bumping and dual marketplace publishing.
    npm run version:major   # Breaking changes (1.0.0 → 2.0.0)
    ```
 
-Releases are automatically published to both VS Code Marketplace and Open VSX Registry.
+3. **Manual Release**:
+   - Go to Actions tab → "Release" workflow
+   - Click "Run workflow" and enter the tag name (e.g., `v1.0.3`)
+   - Releases published to both VS Code Marketplace and Open VSX Registry
 
 ### Development Commands
 
