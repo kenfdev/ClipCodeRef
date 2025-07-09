@@ -1,0 +1,13 @@
+{
+  "id": "range-selection",
+  "started": "2025-07-09T10:53:00.000Z",
+  "lastUpdated": "2025-07-09T10:53:00.000Z",
+  "status": "active",
+  "phase": "complete",
+  "progress": {
+    "discovery": { "answered": 5, "total": 5 },
+    "detail": { "answered": 5, "total": 5 }
+  },
+  "contextFiles": ["src/extension.ts", "src/test/extension.test.ts", "package.json"],
+  "relatedFeatures": ["single-line-copy"]
+}
