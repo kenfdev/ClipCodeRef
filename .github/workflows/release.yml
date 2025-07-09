@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests
+      run: xvfb-run -a npm test
+    
+    - name: Build extension
+      run: npm run package
+    
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -z "$PREVIOUS_TAG" ]; then
+          CHANGELOG=$(git log --pretty=format:"- %s" --since="1 month ago")
+        else
+          CHANGELOG=$(git log --pretty=format:"- %s" ${PREVIOUS_TAG}..HEAD)
+        fi
+        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+    
+    - name: Create .vsix package
+      run: npx @vscode/vsce package --out clipcoderef-${{ steps.get_version.outputs.VERSION }}.vsix
+    
+    - name: Publish to VS Code Marketplace
+      run: npx @vscode/vsce publish --pat ${{ secrets.VSCE_TOKEN }}
+      env:
+        VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+    
+    - name: Publish to Open VSX Registry
+      run: npx ovsx publish --pat ${{ secrets.OPEN_VSX_TOKEN }}
+      env:
+        OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref }}
+        name: Release ${{ steps.get_version.outputs.VERSION }}
+        body: |
+          ## Changes in v${{ steps.get_version.outputs.VERSION }}
+          
+          ${{ steps.release_notes.outputs.CHANGELOG }}
+          
+          ## Installation
+          
+          You can install this extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Craftell.clipcoderef) or by downloading the .vsix file below.
+        files: |
+          clipcoderef-${{ steps.get_version.outputs.VERSION }}.vsix
+        draft: false
+        prerelease: false
