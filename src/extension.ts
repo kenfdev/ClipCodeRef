@@ -70,7 +70,6 @@ function generateSingleLineReference(document: vscode.TextDocument, selection: v
   // Read configuration
   const config = vscode.workspace.getConfiguration('clipCodeRef');
   const format = config.get<string>('format', 'simple');
-  const maxRangeLines = config.get<number>('maxRangeLines', 50);
   
   if (format === 'simple') {
     // Simple format: path L<line>

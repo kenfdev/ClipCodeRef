@@ -120,6 +120,11 @@ Tests should cover:
 - ✅ Clipboard integration
 - ✅ Test coverage
 - ✅ Edge case handling (empty lines, last line without newline, all file types)
+- ✅ Range selection feature (multi-line selections)
+- ✅ maxRangeLines configuration and validation
+- ✅ Range selection integration with all activation methods
+- ✅ Performance optimized (under 100ms)
+- ✅ Backward compatibility maintained for single-line functionality
 
 ## Important Notes
 
