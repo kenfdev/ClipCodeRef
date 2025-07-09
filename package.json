@@ -115,7 +115,10 @@
     "test": "vscode-test",
     "publish": "npx @vscode/vsce publish",
     "publish-ovsx": "npx ovsx publish",
-    "package-vsix": "npx @vscode/vsce package"
+    "package-vsix": "npx @vscode/vsce package",
+    "version:patch": "npm version patch && git push --follow-tags",
+    "version:minor": "npm version minor && git push --follow-tags",
+    "version:major": "npm version major && git push --follow-tags"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

@@ -133,6 +133,38 @@ Perfect for developers who:
 - Feature requests welcome
 - Star the project if you find it useful!
 
+## Development
+
+### Version Bumping & Releases
+
+This project uses automated version bumping and dual marketplace publishing.
+
+**For maintainers:**
+
+1. **GitHub Actions** (Recommended):
+   - Go to Actions tab → "Version Bump" workflow
+   - Click "Run workflow" and select version type (patch/minor/major)
+   - Automatically updates package.json, creates tag, and triggers release
+
+2. **Local Development**:
+   ```bash
+   npm run version:patch   # Bug fixes (1.0.0 → 1.0.1)
+   npm run version:minor   # New features (1.0.0 → 1.1.0) 
+   npm run version:major   # Breaking changes (1.0.0 → 2.0.0)
+   ```
+
+Releases are automatically published to both VS Code Marketplace and Open VSX Registry.
+
+### Development Commands
+
+```bash
+npm install          # Install dependencies
+npm run watch        # Development mode
+npm run compile      # Build + type check + lint
+npm test            # Run test suite
+npm run package-vsix # Create .vsix package
+```
+
 ## License
 
 [MIT](LICENSE)
