@@ -1,0 +1,118 @@
+{
+  "name": "clipcoderef",
+  "displayName": "ClipCodeRef",
+  "description": "Copy code references",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.101.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "claude",
+    "copilot",
+    "code-reference",
+    "productivity",
+    "clipboard"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "clipcoderef.copyReference",
+        "title": "ClipCodeRef: Copy Code Reference"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "clipcoderef.copyReference",
+        "key": "ctrl+shift+c",
+        "mac": "cmd+shift+c",
+        "when": "editorTextFocus"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "clipcoderef.copyReference",
+          "group": "9_cutcopypaste",
+          "when": "editorTextFocus"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ClipCodeRef",
+      "properties": {
+        "clipCodeRef.format": {
+          "type": "string",
+          "default": "simple",
+          "enum": [
+            "simple",
+            "preview"
+          ],
+          "description": "Output format for code references",
+          "enumDescriptions": [
+            "Simple reference: path/to/file.js L10",
+            "With code preview: path/to/file.js L10: const example = true;"
+          ]
+        },
+        "clipCodeRef.trimWhitespace": {
+          "type": "boolean",
+          "default": true,
+          "description": "Remove leading/trailing whitespace from code preview"
+        },
+        "clipCodeRef.maxLineLength": {
+          "type": "number",
+          "default": 80,
+          "description": "Maximum line length for code preview"
+        },
+        "clipCodeRef.multiRootBehavior": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "always",
+            "never"
+          ],
+          "description": "How to handle multi-root workspaces",
+          "enumDescriptions": [
+            "Include workspace name only when paths would be ambiguous",
+            "Always include workspace name",
+            "Never include workspace name"
+          ]
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.101.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "eslint": "^9.25.1",
+    "esbuild": "^0.25.3",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.8.3",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
