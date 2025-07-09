@@ -426,6 +426,358 @@ console.log('test');`;
 	});
 });
 
+// Test suite for edge cases
+suite('Edge Case Tests', () => {
+	test('Empty line handling - simple format', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'simple', vscode.ConfigurationTarget.Global);
+
+		const content = `first line
+
+third line`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'typescript'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Place cursor on empty line (line 2)
+		editor.selection = new vscode.Selection(
+			new vscode.Position(1, 0),
+			new vscode.Position(1, 0)
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		// Should generate valid reference for empty line
+		assert.ok(clipboardText.includes('L2'), 'Should contain line number L2 for empty line');
+		assert.ok(!clipboardText.includes('undefined'), 'Should not contain undefined');
+		assert.ok(clipboardText.trim().length > 0, 'Should produce non-empty output');
+	});
+
+	test('Empty line handling - preview format', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'preview', vscode.ConfigurationTarget.Global);
+
+		const content = `first line
+
+third line`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'typescript'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Place cursor on empty line (line 2)
+		editor.selection = new vscode.Selection(
+			new vscode.Position(1, 0),
+			new vscode.Position(1, 0)
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		// Should generate valid reference with empty content
+		assert.ok(clipboardText.includes('L2:'), 'Should contain line number L2: for empty line');
+		assert.ok(!clipboardText.includes('undefined'), 'Should not contain undefined');
+		// Empty line in preview should just show "L2: " or "L2:"
+		const match = clipboardText.match(/L2:\s*$/);
+		assert.ok(match, 'Empty line should show L2: with no or minimal content');
+	});
+
+	test('Last line without newline handling', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'preview', vscode.ConfigurationTarget.Global);
+
+		// Create content without trailing newline
+		const content = `first line
+second line
+last line without newline`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'typescript'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Place cursor on last line
+		const lastLineIndex = doc.lineCount - 1;
+		editor.selection = new vscode.Selection(
+			new vscode.Position(lastLineIndex, 0),
+			new vscode.Position(lastLineIndex, 0)
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		// Should handle last line correctly
+		assert.ok(clipboardText.includes(`L${lastLineIndex + 1}:`), 'Should contain correct line number for last line');
+		assert.ok(clipboardText.includes('last line without newline'), 'Should contain last line content');
+		assert.ok(!clipboardText.includes('undefined'), 'Should not contain undefined');
+	});
+
+	test('Multi-cursor detection preserved', async () => {
+		const content = `line 1
+line 2
+line 3`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'typescript'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Create multiple cursors
+		editor.selections = [
+			new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(0, 0)),
+			new vscode.Selection(new vscode.Position(1, 0), new vscode.Position(1, 0))
+		];
+
+		// Verify we have multiple cursors
+		assert.strictEqual(editor.selections.length, 2, 'Should have 2 cursors');
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		
+		// Should show error message (we can't directly test showErrorMessage, but we can verify clipboard wasn't changed)
+		const clipboardText = await vscode.env.clipboard.readText();
+		
+		// The clipboard should either contain the previous value or the error occurred before writing
+		// We'll set a known value first to test this
+		await vscode.env.clipboard.writeText('test-clipboard-content');
+		
+		editor.selections = [
+			new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(0, 0)),
+			new vscode.Selection(new vscode.Position(1, 0), new vscode.Position(1, 0))
+		];
+		
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const newClipboardText = await vscode.env.clipboard.readText();
+		
+		// Clipboard should not be modified when multiple cursors are detected
+		assert.strictEqual(newClipboardText, 'test-clipboard-content', 'Clipboard should not be modified with multiple cursors');
+	});
+
+	test('Different file types - Markdown', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'preview', vscode.ConfigurationTarget.Global);
+
+		const content = `# Markdown Header
+## Subheader
+Regular text
+\`\`\`javascript
+code block
+\`\`\``;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'markdown'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Test different lines
+		const testCases = [
+			{ line: 0, expected: '# Markdown Header' },
+			{ line: 1, expected: '## Subheader' },
+			{ line: 3, expected: '```javascript' }
+		];
+
+		for (const testCase of testCases) {
+			editor.selection = new vscode.Selection(
+				new vscode.Position(testCase.line, 0),
+				new vscode.Position(testCase.line, 0)
+			);
+
+			await vscode.commands.executeCommand('clipcoderef.copyReference');
+			const clipboardText = await vscode.env.clipboard.readText();
+
+			assert.ok(clipboardText.includes(`L${testCase.line + 1}:`), `Should contain line number L${testCase.line + 1}`);
+			assert.ok(clipboardText.includes(testCase.expected), `Should contain content: ${testCase.expected}`);
+		}
+	});
+
+	test('Different file types - JSON', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'preview', vscode.ConfigurationTarget.Global);
+
+		const content = `{
+  "name": "test",
+  "version": "1.0.0",
+  "dependencies": {}
+}`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'json'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Test line with JSON content
+		editor.selection = new vscode.Selection(
+			new vscode.Position(1, 0),
+			new vscode.Position(1, 0)
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		assert.ok(clipboardText.includes('L2:'), 'Should contain line number L2');
+		assert.ok(clipboardText.includes('"name": "test"'), 'Should contain JSON content');
+	});
+
+	test('Different file types - Plain text', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'simple', vscode.ConfigurationTarget.Global);
+
+		const content = `This is plain text
+Without any syntax highlighting
+Just regular content`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'plaintext'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		editor.selection = new vscode.Selection(
+			new vscode.Position(2, 0),
+			new vscode.Position(2, 0)
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		assert.ok(clipboardText.includes('L3'), 'Should contain line number L3 for plain text');
+	});
+
+	test('Multi-line statement treated as single line when cursor present', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'preview', vscode.ConfigurationTarget.Global);
+
+		const content = `const longString = \`This is a
+multi-line
+template literal\`;
+const obj = {
+  key: 'value',
+  nested: {
+    prop: true
+  }
+};`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'javascript'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Place cursor in middle of multi-line template literal
+		editor.selection = new vscode.Selection(
+			new vscode.Position(1, 5),
+			new vscode.Position(1, 5)
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		// Should only show the line where cursor is, not the entire statement
+		assert.ok(clipboardText.includes('L2:'), 'Should contain line number L2');
+		assert.ok(clipboardText.includes('multi-line'), 'Should contain content of cursor line');
+		assert.ok(!clipboardText.includes('template literal'), 'Should not contain content from other lines');
+	});
+
+	test('Very long lines with different maxLineLength settings', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'preview', vscode.ConfigurationTarget.Global);
+
+		const veryLongLine = 'x'.repeat(200); // 200 character line
+		const content = `short line
+${veryLongLine}
+another short line`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'plaintext'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Test with different maxLineLength values
+		const testCases = [10, 50, 100, 300];
+
+		for (const maxLength of testCases) {
+			await config.update('maxLineLength', maxLength, vscode.ConfigurationTarget.Global);
+
+			editor.selection = new vscode.Selection(
+				new vscode.Position(1, 0),
+				new vscode.Position(1, 0)
+			);
+
+			await vscode.commands.executeCommand('clipcoderef.copyReference');
+			const clipboardText = await vscode.env.clipboard.readText();
+
+			assert.ok(clipboardText.includes('L2:'), `Should contain L2: for maxLength ${maxLength}`);
+
+			const contentPart = clipboardText.split(': ')[1];
+			if (veryLongLine.length > maxLength) {
+				assert.ok(contentPart.includes('...'), `Should have ellipsis for maxLength ${maxLength}`);
+				assert.ok(contentPart.length <= maxLength + 3, `Should be truncated to ${maxLength} + 3 chars`);
+			} else {
+				assert.ok(!contentPart.includes('...'), `Should not have ellipsis when line fits in maxLength ${maxLength}`);
+			}
+		}
+	});
+
+	test('Whitespace variations with trimWhitespace setting', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'preview', vscode.ConfigurationTarget.Global);
+
+		const content = `normal line
+\t\ttab indented line
+    space indented line
+\t  \tmixed indentation
+line with trailing spaces    \t
+\t\t\t
+   `;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'plaintext'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Test with trimWhitespace enabled
+		await config.update('trimWhitespace', true, vscode.ConfigurationTarget.Global);
+
+		const testCasesWithTrim = [
+			{ line: 1, expectedContent: 'tab indented line' },
+			{ line: 2, expectedContent: 'space indented line' },
+			{ line: 3, expectedContent: 'mixed indentation' },
+			{ line: 4, expectedContent: 'line with trailing spaces' },
+			{ line: 5, expectedContent: '' }, // all whitespace should be trimmed
+			{ line: 6, expectedContent: '' }  // all whitespace should be trimmed
+		];
+
+		for (const testCase of testCasesWithTrim) {
+			editor.selection = new vscode.Selection(
+				new vscode.Position(testCase.line, 0),
+				new vscode.Position(testCase.line, 0)
+			);
+
+			await vscode.commands.executeCommand('clipcoderef.copyReference');
+			const clipboardText = await vscode.env.clipboard.readText();
+
+			const contentPart = clipboardText.split(': ')[1] || '';
+			assert.strictEqual(contentPart.trim(), testCase.expectedContent, 
+				`Line ${testCase.line + 1} should have trimmed content: "${testCase.expectedContent}"`);
+		}
+
+		// Test with trimWhitespace disabled
+		await config.update('trimWhitespace', false, vscode.ConfigurationTarget.Global);
+
+		editor.selection = new vscode.Selection(
+			new vscode.Position(4, 0),
+			new vscode.Position(4, 0)
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		assert.ok(clipboardText.includes('line with trailing spaces    \t'), 
+			'Should preserve trailing whitespace when trimWhitespace is false');
+	});
+});
+
 // Test suite specifically for path resolution logic
 suite('Path Resolution Logic Tests', () => {
 	test('Path resolution uses vscode.workspace.asRelativePath correctly', async () => {

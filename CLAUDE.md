@@ -71,8 +71,8 @@ npm run watch-tests    # Watch mode for tests
 
 3. **Format Types**:
 
-   - **Simple**: `path/to/file.ts:10-20` (compact for AI consumption)
-   - **Preview**: Shows actual code with line numbers, respects trim/maxLength settings
+   - **Simple**: `path/to/file.ts L10` (compact for AI consumption, single line)
+   - **Preview**: `path/to/file.ts L10: <code content>` (shows actual code, respects trim/maxLength settings)
 
 4. **Clipboard Operations**:
    ```typescript
@@ -114,11 +114,12 @@ Tests should cover:
 - ✅ Build system with esbuild
 - ✅ Multi-cursor error handling
 - ✅ Command registration structure
-- ❌ Path resolution logic
-- ❌ Format implementation (simple/preview)
-- ❌ Configuration reading
-- ❌ Clipboard integration
-- ❌ Test coverage
+- ✅ Path resolution logic
+- ✅ Format implementation (simple/preview)
+- ✅ Configuration reading
+- ✅ Clipboard integration
+- ✅ Test coverage
+- ✅ Edge case handling (empty lines, last line without newline, all file types)
 
 ## Important Notes
 
