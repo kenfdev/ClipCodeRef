@@ -84,6 +84,11 @@
             "Always include workspace name",
             "Never include workspace name"
           ]
+        },
+        "clipCodeRef.maxRangeLines": {
+          "type": "number",
+          "default": 50,
+          "description": "Maximum number of lines allowed for range selections"
         }
       }
     }

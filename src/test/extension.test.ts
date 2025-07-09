@@ -402,6 +402,31 @@ console.log('test');`;
 		assert.ok(clipboardText.includes('L1'), 'Should contain line number');
 	});
 
+	test('Configuration - maxRangeLines setting access', async () => {
+		// Reset to default first
+		await vscode.workspace.getConfiguration('clipCodeRef').update('maxRangeLines', undefined, vscode.ConfigurationTarget.Global);
+		
+		// Test default value from config.get with fallback
+		let config = vscode.workspace.getConfiguration('clipCodeRef');
+		const defaultValue = config.get<number>('maxRangeLines', 50);
+		assert.strictEqual(defaultValue, 50, 'Default maxRangeLines should be 50');
+		
+		// Test setting and getting custom value
+		await config.update('maxRangeLines', 100, vscode.ConfigurationTarget.Global);
+		config = vscode.workspace.getConfiguration('clipCodeRef'); // Refresh configuration
+		const customValue = config.get<number>('maxRangeLines', 50);
+		assert.strictEqual(customValue, 100, 'Should be able to set and get custom maxRangeLines value');
+		
+		// Test with different values
+		await config.update('maxRangeLines', 25, vscode.ConfigurationTarget.Global);
+		config = vscode.workspace.getConfiguration('clipCodeRef'); // Refresh configuration
+		const newValue = config.get<number>('maxRangeLines', 50);
+		assert.strictEqual(newValue, 25, 'Should accept different maxRangeLines values');
+		
+		// Restore default
+		await config.update('maxRangeLines', undefined, vscode.ConfigurationTarget.Global);
+	});
+
 	test('Path resolution - consistent with current implementation', async () => {
 		// Test that current asRelativePath behavior is preserved
 		const content = `console.log('test');`;
@@ -423,6 +448,216 @@ console.log('test');`;
 		const expectedPath = vscode.workspace.asRelativePath(doc.uri, false);
 		assert.ok(clipboardText.includes(expectedPath), `Should contain expected path: ${expectedPath}`);
 		assert.ok(clipboardText.includes('L1'), 'Should contain line number');
+	});
+});
+
+// Test suite for range selection functionality
+suite('Range Selection Tests', () => {
+	test('Range selection - simple format L<start>-L<end>', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'simple', vscode.ConfigurationTarget.Global);
+
+		const content = `function example() {
+  const a = 1;
+  const b = 2;
+  return a + b;
+}`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'typescript'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Select lines 2-4 (0-based: 1-3)
+		editor.selection = new vscode.Selection(
+			new vscode.Position(1, 0),
+			new vscode.Position(3, 13)
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		// Should match: path L2-L4
+		assert.ok(clipboardText.includes('L2-L4'), 'Should contain range format L2-L4');
+		assert.ok(!clipboardText.includes('const a = 1;'), 'Should NOT contain code content in simple format');
+	});
+
+	test('Range selection - preview format with code block', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'preview', vscode.ConfigurationTarget.Global);
+
+		const content = `function example() {
+  const a = 1;
+  const b = 2;
+  return a + b;
+}`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'typescript'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Select lines 2-4 (0-based: 1-3)
+		editor.selection = new vscode.Selection(
+			new vscode.Position(1, 0),
+			new vscode.Position(3, 14) // Include the full "return a + b;" line
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		// Should match: path L2-L4: \n\n```\n<code content>\n```
+		assert.ok(clipboardText.includes('L2-L4:'), 'Should contain range format with colon');
+		assert.ok(clipboardText.includes('```'), 'Should contain code block markers');
+		assert.ok(clipboardText.includes('const a = 1;'), 'Should contain first line of selection');
+		assert.ok(clipboardText.includes('const b = 2;'), 'Should contain second line of selection');
+		assert.ok(clipboardText.includes('return a + b'), 'Should contain third line of selection');
+	});
+
+	test('Range selection - maxRangeLines validation falls back to simple format', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'preview', vscode.ConfigurationTarget.Global);
+		await config.update('maxRangeLines', 3, vscode.ConfigurationTarget.Global);
+
+		const content = `line 1
+line 2
+line 3
+line 4
+line 5
+line 6`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'typescript'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Select 5 lines (exceeds maxRangeLines of 3)
+		editor.selection = new vscode.Selection(
+			new vscode.Position(0, 0),
+			new vscode.Position(4, 6)
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		// Should fall back to simple format (no code content, just range)
+		assert.ok(clipboardText.includes('L1-L5'), 'Should contain range format L1-L5');
+		assert.ok(!clipboardText.includes('line 1'), 'Should NOT contain code content when falling back to simple format');
+		assert.ok(!clipboardText.includes(':'), 'Should NOT contain colon separator in fallback simple format');
+	});
+
+	test('Range selection - within maxRangeLines limit', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'simple', vscode.ConfigurationTarget.Global);
+		await config.update('maxRangeLines', 5, vscode.ConfigurationTarget.Global);
+
+		const content = `line 1
+line 2
+line 3
+line 4`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'typescript'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Select 3 lines (within maxRangeLines of 5)
+		editor.selection = new vscode.Selection(
+			new vscode.Position(1, 0),
+			new vscode.Position(3, 6)
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		// Should generate valid range reference
+		assert.ok(clipboardText.includes('L2-L4'), 'Should contain range format L2-L4');
+	});
+
+	test('Range selection - uses document.getText(selection)', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'preview', vscode.ConfigurationTarget.Global);
+
+		const content = `function test() {
+  const value = "hello world";
+  console.log(value);
+  return value;
+}`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'typescript'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Select partial lines (not full lines)
+		editor.selection = new vscode.Selection(
+			new vscode.Position(1, 2), // Start at column 2 of line 2
+			new vscode.Position(2, 20) // End at column 20 of line 3
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		// Should contain the exact text from the selection in code block format
+		assert.ok(clipboardText.includes('```'), 'Should contain code block markers');
+		assert.ok(clipboardText.includes('const value = "hello world";'), 
+			'Should contain content from selection using document.getText(selection)');
+		assert.ok(clipboardText.includes('console.log(value)'), 
+			'Should contain partial content from multi-line selection');
+	});
+
+	test('Range selection - single line within range selection should use existing behavior', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'simple', vscode.ConfigurationTarget.Global);
+
+		const content = `line 1
+line 2
+line 3`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'typescript'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Select only one line (should use single line behavior)
+		editor.selection = new vscode.Selection(
+			new vscode.Position(1, 0),
+			new vscode.Position(1, 6)
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		// Should use single line format, not range format
+		assert.ok(clipboardText.includes('L2'), 'Should contain single line number L2');
+		assert.ok(!clipboardText.includes('L2-L2'), 'Should NOT use range format for single line');
+	});
+
+	test('Range selection - empty selection should use cursor position', async () => {
+		const config = vscode.workspace.getConfiguration('clipCodeRef');
+		await config.update('format', 'simple', vscode.ConfigurationTarget.Global);
+
+		const content = `line 1
+line 2
+line 3`;
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'typescript'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+
+		// Empty selection (cursor only)
+		editor.selection = new vscode.Selection(
+			new vscode.Position(1, 3),
+			new vscode.Position(1, 3)
+		);
+
+		await vscode.commands.executeCommand('clipcoderef.copyReference');
+		const clipboardText = await vscode.env.clipboard.readText();
+
+		// Should use single line format for cursor position
+		assert.ok(clipboardText.includes('L2'), 'Should contain single line number L2');
+		assert.ok(!clipboardText.includes('L2-L2'), 'Should NOT use range format for cursor position');
 	});
 });
 

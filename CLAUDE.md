@@ -208,8 +208,7 @@ Short, imperative explanation of the goal of the task and why it is needed.
 1. Research existing GraphQL resolver patterns
 2. Implement basic resolver with error handling
 3. Add performance monitoring
-4. Write unit and integration tests
-5. Benchmark performance under load
+4. Benchmark performance under load
 
 ## Implementation Notes (only added after working on the task)
 
@@ -250,7 +249,30 @@ When working on any task that involves code implementation:
 3. **MANDATORY**: Only after user confirms tests are adequate, implement the code to pass tests
 4. **MANDATORY**: Never skip this process, even for seemingly simple tasks
 
-This is a strict requirement. Implementation without tests-first violates the project's TDD principles and must never happen again. 
+This is a strict requirement. Implementation without tests-first violates the project's TDD principles and must never happen again.
+
+## ⚠️ MANDATORY CHECKPOINT SYSTEM ⚠️
+
+**BEFORE IMPLEMENTING ANY CODE, CLAUDE MUST:**
+
+1. **STOP** - Do not implement code after writing tests
+2. **ASK** - "I've written tests for [feature]. Do these tests adequately cover the requirements? Should I proceed with implementing the code to make them pass?"
+3. **WAIT** - Do not proceed until user explicitly confirms
+4. **IMPLEMENT** - Only after user approval, write the minimal code to pass tests
+
+**If you find yourself about to implement code without asking for test confirmation, STOP IMMEDIATELY and ask for permission.**
+
+This checkpoint system is designed to prevent automatic implementation and ensure proper TDD workflow.
+
+## TASK CREATION RULES
+
+**🚫 NEVER CREATE SEPARATE TESTING TASKS**
+
+- Tests are NOT separate tasks - they are part of implementation tasks
+- Each implementation task MUST include test writing as the first step
+- Testing is embedded within the TDD workflow of each task
+- Only create tasks for: features, bug fixes, refactoring, configuration, documentation
+- Testing tasks violate TDD principles and fragment the development process 
 
 ## 2. Typical Workflow
 
